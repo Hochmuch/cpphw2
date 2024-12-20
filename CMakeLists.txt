@@ -9,4 +9,6 @@ add_executable(cpphw2 main.cpp
         vectorfield.h
         vectorfield.cpp
         fast_fixed.h
+        reader.h
+        basic_fixed.h
 )

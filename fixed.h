@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/stdc++.h>
+#include "basic_fixed.h"
 
 template<size_t N, size_t K>
 class Fixed {
@@ -28,6 +29,16 @@ public:
     constexpr Fixed(double f) : value(static_cast<StorageType>(f * (1 << K))) {
     }
 
+    template<size_t N2, size_t K2>
+    constexpr Fixed(const Fast_fixed<N2, K2>& other) {
+        if constexpr (K > K2) {
+            value = static_cast<StorageType>(other.value) << (K - K2);
+        } else if constexpr (K < K2) {
+            value = static_cast<StorageType>(other.value) >> (K2 - K);
+        } else {
+            value = static_cast<StorageType>(other.value);
+        }
+    }
 
     static constexpr Fixed from_raw(StorageType x) {
         Fixed ret;
@@ -243,3 +254,65 @@ constexpr Fixed<N, K>& operator-=(Fixed<N, K>& a, T b) {
     }
     return a;
 }
+
+/// ОПЕРАЦИИ С FAST_FIXED
+///
+
+// Operators between Fixed and Fast_fixed
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator+(const Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    using ResultType = Fixed<(N1 > N2 ? N1 : N2), (K1 > K2 ? K1 : K2)>;
+    using StorageType = typename ResultType::StorageType;
+
+    StorageType a_value = a.value;
+    StorageType b_value = b.value;
+
+    if constexpr (K1 > K2) {
+        b_value <<= (K1 - K2);
+    } else if constexpr (K2 > K1) {
+        a_value <<= (K2 - K1);
+    }
+
+    return ResultType::from_raw(a_value + b_value);
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator-(const Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    using ResultType = Fixed<(N1 > N2 ? N1 : N2), (K1 > K2 ? K1 : K2)>;
+    using StorageType = typename ResultType::StorageType;
+
+    StorageType a_value = a.value;
+    StorageType b_value = b.value;
+
+    if constexpr (K1 > K2) {
+        b_value <<= (K1 - K2);
+    } else if constexpr (K2 > K1) {
+        a_value <<= (K2 - K1);
+    }
+
+    return ResultType::from_raw(a_value - b_value);
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator*(const Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    constexpr size_t K = K1;
+    using IntermediateType = int64_t;
+    using ResultType = Fixed<(N1 > N2 ? N1 : N2), K>;
+
+    IntermediateType product = static_cast<IntermediateType>(a.value) * b.value;
+    return ResultType::from_raw(static_cast<typename ResultType::StorageType>(product >> K1));
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator/(const Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    constexpr size_t K = K1;
+    using IntermediateType = int64_t;
+    using ResultType = Fixed<(N1 > N2 ? N1 : N2), K>;
+
+    IntermediateType dividend = static_cast<IntermediateType>(a.value) << K;
+    return ResultType::from_raw(static_cast<typename ResultType::StorageType>(dividend / b.value));
+}
+
+//
+//
+//

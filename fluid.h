@@ -4,6 +4,7 @@
 #include "fixed.h"
 #include "fast_fixed.h"
 #include "vectorfield.h"
+#include "reader.h"
 
 template <typename P_TYPE, typename V_TYPE, typename V_FLOW_TYPE, size_t N, size_t M>
 class Fluid {
@@ -12,6 +13,9 @@ public:
     static constexpr size_t T = 1'000'000;
     static constexpr std::array<std::pair<int, int>, 4> deltas{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
 
+
+    char field[N][M + 1];
+    /*
     char field[N][M + 1] = {
         "####################################################################################",
         "#                                                                                  #",
@@ -50,17 +54,18 @@ public:
         "#                                                                                  #",
         "####################################################################################",
     };
+    */
 
+    //static constexpr P_TYPE inf = P_TYPE::from_raw(std::numeric_limits<int32_t>::max());
 
-    static constexpr P_TYPE inf = P_TYPE::from_raw(std::numeric_limits<int32_t>::max());
-
-    static constexpr P_TYPE eps = P_TYPE::from_raw(deltas.size());
+    //static constexpr P_TYPE eps = P_TYPE::from_raw(deltas.size());
 
     P_TYPE rho[256];
 
     P_TYPE p[N][M], old_p[N][M];
 
-    VectorField<V_TYPE, N, M> velocity{}, velocity_flow{};
+    VectorField<V_TYPE, N, M> velocity{};
+    VectorField<V_FLOW_TYPE, N, M> velocity_flow{};
     int last_use[N][M]{};
     int UT = 0;
 
@@ -69,12 +74,15 @@ public:
 
         P_TYPE cur_p;
 
-        std::array<P_TYPE, deltas.size()> v;
+        std::array<V_TYPE, deltas.size()> v;
 
         void swap_with(int x, int y, Fluid &fluid) {
             std::swap(fluid.field[x][y], type);
             std::swap(fluid.p[x][y], cur_p);
-            std::swap(fluid.velocity.v[x][y], v);
+            //std::swap(fluid.velocity.v[x][y], v);
+            for (size_t i = 0; i < deltas.size(); ++i) {
+                std::swap(fluid.velocity.v[x][y][i], v[i]);
+            }
         }
     };
 
@@ -92,7 +100,7 @@ public:
                     continue;
                 }
                 // assert(v >= velocity_flow.get(x, y, dx, dy));
-                auto vp = std::min(lim, cap - flow);
+                auto vp = std::min(lim, V_FLOW_TYPE(cap - flow));
                 if (last_use[nx][ny] == UT - 1) {
                     velocity_flow.add(x, y, dx, dy, vp);
                     last_use[x][y] = UT;
@@ -118,10 +126,20 @@ public:
         return V_TYPE::from_raw((rnd() & ((1 << b) - 1)));
     }
     */
-
+    /*
     V_TYPE random01() {
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
         return V_TYPE(distribution(rnd));
+    }
+    */
+
+    V_TYPE random01() {
+        std::uniform_real_distribution<double> distribution(0.0, 1.0);
+        if constexpr (std::is_same_v<V_TYPE, double>) {
+            return distribution(rnd);
+        } else {
+            return V_TYPE(distribution(rnd));
+        }
     }
 
     void propagate_stop(int x, int y, bool force = false) {
@@ -194,7 +212,7 @@ public:
 
             V_TYPE raand = random01();
             P_TYPE p = raand * sum;
-            size_t d = std::ranges::upper_bound(tres, p) - tres.begin();
+            size_t d = std::ranges::upper_bound(tres, V_TYPE(p)) - tres.begin();
 
             auto [dx, dy] = deltas[d];
             nx = x + dx;

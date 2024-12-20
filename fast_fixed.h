@@ -1,6 +1,8 @@
 #pragma once
 #include <bits/stdc++.h>
 
+#include "basic_fixed.h"
+
 template<size_t N, size_t K>
 class Fast_fixed {
 private:
@@ -26,6 +28,17 @@ public:
     }
 
     constexpr Fast_fixed(double f) : value(static_cast<StorageType>(f * (1 << K))) {
+    }
+
+    template<size_t N2, size_t K2>
+    constexpr Fast_fixed(const Fixed<N2, K2>& other) {
+        if constexpr (K > K2) {
+            value = static_cast<StorageType>(other.value) << (K - K2);
+        } else if constexpr (K < K2) {
+            value = static_cast<StorageType>(other.value) >> (K2 - K);
+        } else {
+            value = static_cast<StorageType>(other.value);
+        }
     }
 
     static constexpr Fast_fixed from_raw(StorageType x) {
@@ -242,5 +255,95 @@ constexpr Fast_fixed<N, K> &operator-=(Fast_fixed<N, K> &a, T b) {
     } else {
         a.value -= static_cast<int64_t>(b * (1 << K));
     }
+    return a;
+}
+
+/// ОПЕРАЦИИ С FIXED
+
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator+(const Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    return b + a;  // Reuse the Fixed + Fast_fixed operator
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator-(const Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    using ResultType = Fixed<(N1 > N2 ? N1 : N2), (K1 > K2 ? K1 : K2)>;
+    return ResultType(a) - b;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator*(const Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    return b * a;  // Reuse the Fixed * Fast_fixed operator
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator/(const Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    using ResultType = Fixed<(N1 > N2 ? N1 : N2), (K1 > K2 ? K1 : K2)>;
+    return ResultType(a) / b;
+}
+
+// Comparison operators
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr bool operator==(const Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    using CommonType = Fixed<(N1 > N2 ? N1 : N2), (K1 > K2 ? K1 : K2)>;
+    return CommonType(a).value == CommonType(b).value;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr auto operator<=>(const Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    using CommonType = Fixed<(N1 > N2 ? N1 : N2), (K1 > K2 ? K1 : K2)>;
+    return CommonType(a).value <=> CommonType(b).value;
+}
+
+///
+
+// Compound assignment operators for Fixed with Fast_fixed
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fixed<N1, K1>& operator+=(Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    a = a + b;  // Reuse existing operator+
+    return a;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fixed<N1, K1>& operator-=(Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    a = a - b;  // Reuse existing operator-
+    return a;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fixed<N1, K1>& operator*=(Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    a = a * b;  // Reuse existing operator*
+    return a;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fixed<N1, K1>& operator/=(Fixed<N1, K1>& a, const Fast_fixed<N2, K2>& b) {
+    a = a / b;  // Reuse existing operator/
+    return a;
+}
+
+// Compound assignment operators for Fast_fixed with Fixed
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fast_fixed<N1, K1>& operator+=(Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    a = Fast_fixed<N1, K1>(a + b);  // Convert result back to Fast_fixed
+    return a;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fast_fixed<N1, K1>& operator-=(Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    a = Fast_fixed<N1, K1>(a - b);  // Convert result back to Fast_fixed
+    return a;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fast_fixed<N1, K1>& operator*=(Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    a = Fast_fixed<N1, K1>(a * b);  // Convert result back to Fast_fixed
+    return a;
+}
+
+template<size_t N1, size_t K1, size_t N2, size_t K2>
+constexpr Fast_fixed<N1, K1>& operator/=(Fast_fixed<N1, K1>& a, const Fixed<N2, K2>& b) {
+    a = Fast_fixed<N1, K1>(a / b);  // Convert result back to Fast_fixed
     return a;
 }
