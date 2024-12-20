@@ -94,13 +94,14 @@ public:
         for (auto [dx, dy]: deltas) {
             int nx = x + dx, ny = y + dy;
             if (field[nx][ny] != '#' && last_use[nx][ny] < UT) {
-                auto cap = velocity.get(x, y, dx, dy);
+                auto cap = static_cast<V_FLOW_TYPE>(velocity.get(x, y, dx, dy));
                 auto flow = velocity_flow.get(x, y, dx, dy);
-                if (flow == cap) {
+                if (abs(flow - cap) < 1e-6f) {
                     continue;
                 }
                 // assert(v >= velocity_flow.get(x, y, dx, dy));
-                auto vp = std::min(lim, V_FLOW_TYPE(cap - flow));
+
+                auto vp = std::min(lim, static_cast<V_FLOW_TYPE>(cap - flow));
                 if (last_use[nx][ny] == UT - 1) {
                     velocity_flow.add(x, y, dx, dy, vp);
                     last_use[x][y] = UT;
@@ -138,7 +139,7 @@ public:
         if constexpr (std::is_same_v<V_TYPE, double>) {
             return distribution(rnd);
         } else {
-            return V_TYPE(distribution(rnd));
+            return static_cast<V_TYPE>(distribution(rnd));
         }
     }
 
@@ -211,8 +212,8 @@ public:
             }
 
             V_TYPE raand = random01();
-            P_TYPE p = raand * sum;
-            size_t d = std::ranges::upper_bound(tres, V_TYPE(p)) - tres.begin();
+            P_TYPE p = static_cast<P_TYPE>(raand * sum);
+            size_t d = std::ranges::upper_bound(tres, static_cast<V_TYPE>(p)) - tres.begin();
 
             auto [dx, dy] = deltas[d];
             nx = x + dx;
@@ -243,7 +244,7 @@ public:
     void run() {
         rho[' '] = 0.01;
         rho['.'] = 1000;
-        P_TYPE g = 0.1;
+        V_TYPE g = 0.1;
 
         for (size_t x = 0; x < N; ++x) {
             for (size_t y = 0; y < M; ++y) {
@@ -285,7 +286,7 @@ public:
                             }
                             force -= contr * rho[(int) field[nx][ny]];
                             contr = 0;
-                            velocity.add(x, y, dx, dy, force / rho[(int) field[x][y]]);
+                            velocity.add(x, y, dx, dy, static_cast<V_TYPE>(force / rho[(int) field[x][y]]));
                             p[x][y] -= force / dirs[x][y]; // conv
                             total_delta_p -= force / dirs[x][y]; // conv
                         }
@@ -320,8 +321,9 @@ public:
                         auto old_v = velocity.get(x, y, dx, dy);
                         auto new_v = velocity_flow.get(x, y, dx, dy);
                         if (old_v > 0) {
-                            assert(new_v <= old_v);
-                            velocity.get(x, y, dx, dy) = new_v;
+                            // Add small epsilon to account for floating-point precision
+                            assert(static_cast<V_TYPE>(new_v) <= old_v + static_cast<V_TYPE>(1e-6));
+                            velocity.get(x, y, dx, dy) = static_cast<V_TYPE>(new_v);
                             auto force = (old_v - new_v) * rho[(int) field[x][y]];
                             if (field[x][y] == '.')
                                 force *= 0.8;

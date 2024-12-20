@@ -3,8 +3,8 @@
 
 int main() {
 
-    //Fluid<Fixed<32, 8>, Fast_fixed<32, 8>, Fixed<32, 8>, 36, 84> fluid;
-    Fluid<float, float, float, 36, 84> fluid;
+    Fluid<double, float, Fast_fixed<32, 11>, 36, 84> fluid;
+    //Fluid<Fast_fixed<43, 21>, Fast_fixed<34, 17>, Fixed<32, 7>, 36, 84> fluid;
     //fluid.run();
     read(fluid.field);
     fluid.run();
