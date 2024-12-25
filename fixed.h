@@ -49,6 +49,18 @@ public:
     }
 
     template<size_t N2, size_t K2>
+    constexpr Fixed& operator=(const Fixed<N2, K2>& other) {
+        if constexpr (K > K2) {
+            value = static_cast<StorageType>(other.value) << (K - K2);
+        } else if constexpr (K < K2) {
+            value = static_cast<StorageType>(other.value) >> (K2 - K);
+        } else {
+            value = static_cast<StorageType>(other.value);
+        }
+        return *this;
+    }
+
+    template<size_t N2, size_t K2>
     constexpr Fixed &operator+=(const Fixed<N2, K2> &other) {
         *this = *this + other;
         return *this;

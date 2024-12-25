@@ -11,4 +11,6 @@ add_executable(cpphw2 main.cpp
         fast_fixed.h
         reader.h
         basic_fixed.h
+        precalc.h
 )
+add_compile_definitions("TYPES=DOUBLE,FIXED(16,4),FLOAT")
