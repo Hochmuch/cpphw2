@@ -14,3 +14,4 @@ add_executable(cpphw2 main.cpp
         precalc.h
 )
 add_compile_definitions("TYPES=DOUBLE,FIXED(16,4),FLOAT")
+add_compile_definitions("SIZES=Size_pair<36, 84>, Size_pair<1, 1>")
